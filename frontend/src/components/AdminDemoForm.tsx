@@ -45,7 +45,7 @@ const EMPTY_FORM: DemoCreate = {
 interface AdminDemoFormProps {
   demo?: Demo;
   categories: Category[];
-  trigger: React.ReactNode;
+  trigger: React.ReactElement;
   onSave: (data: DemoCreate, id?: string) => Promise<void>;
 }
 
