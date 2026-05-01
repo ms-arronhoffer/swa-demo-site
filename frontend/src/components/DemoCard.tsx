@@ -6,15 +6,12 @@ import {
   CardHeader,
   CardPreview,
   Text,
-  Tooltip,
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
 import {
   ArrowRight24Regular,
   Code24Regular,
-  Copy24Regular,
-  Eye24Regular,
   Star24Filled,
 } from "@fluentui/react-icons";
 import type { Demo } from "../types";
@@ -64,25 +61,10 @@ const useStyles = makeStyles({
     overflow: "hidden",
     flexGrow: 1,
   },
-  footer: {
-    marginTop: "auto",
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  viewCount: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    color: tokens.colorNeutralForeground3,
-  },
 });
 
 interface DemoCardProps {
   demo: Demo;
-  onView?: (id: string) => void;
 }
 
 function isNew(createdAt: string): boolean {
@@ -102,39 +84,21 @@ const CATEGORY_EMOJI: Record<string, string> = {
   Default: "✨",
 };
 
-export default function DemoCard({ demo, onView }: DemoCardProps) {
+export default function DemoCard({ demo }: DemoCardProps) {
   const styles = useStyles();
-  const emoji =
-    CATEGORY_EMOJI[demo.category] ?? CATEGORY_EMOJI["Default"];
-
-  const handleTryDemo = () => {
-    onView?.(demo.id);
-    window.open(demo.demo_url, "_blank", "noopener,noreferrer");
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}?demo=${demo.id}`);
-  };
+  const emoji = CATEGORY_EMOJI[demo.category] ?? CATEGORY_EMOJI["Default"];
 
   return (
     <Card className={styles.card}>
       <CardPreview className={styles.preview}>
         {demo.thumbnail_url ? (
-          <img
-            src={demo.thumbnail_url}
-            alt={demo.title}
-            className={styles.thumbnail}
-          />
+          <img src={demo.thumbnail_url} alt={demo.title} className={styles.thumbnail} />
         ) : (
           <div className={styles.gradient}>{emoji}</div>
         )}
         <div className={styles.badges}>
           {demo.featured && (
-            <Badge
-              icon={<Star24Filled />}
-              color="warning"
-              size="medium"
-            >
+            <Badge icon={<Star24Filled />} color="warning" size="medium">
               Featured
             </Badge>
           )}
@@ -148,9 +112,7 @@ export default function DemoCard({ demo, onView }: DemoCardProps) {
 
       <CardHeader
         header={
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "4px" }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <Text weight="semibold" size={400}>
               {demo.title}
             </Text>
@@ -159,12 +121,7 @@ export default function DemoCard({ demo, onView }: DemoCardProps) {
                 {demo.category}
               </Badge>
               {demo.tags.slice(0, 3).map((tag) => (
-                <Badge
-                  key={tag}
-                  appearance="tint"
-                  color="informative"
-                  size="small"
-                >
+                <Badge key={tag} appearance="tint" color="informative" size="small">
                   {tag}
                 </Badge>
               ))}
@@ -179,47 +136,33 @@ export default function DemoCard({ demo, onView }: DemoCardProps) {
         </Text>
       </div>
 
-      <CardFooter className={styles.footer}>
-        <div style={{ display: "flex", gap: "8px" }}>
+      <CardFooter style={{ display: "flex", gap: "8px" }}>
+        <Button
+          appearance="primary"
+          icon={<ArrowRight24Regular />}
+          iconPosition="after"
+          size="small"
+          as="a"
+          href={demo.demo_url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Try Demo
+        </Button>
+
+        {demo.repo_url && (
           <Button
-            appearance="primary"
-            icon={<ArrowRight24Regular />}
-            iconPosition="after"
+            appearance="outline"
+            icon={<Code24Regular />}
             size="small"
-            onClick={handleTryDemo}
+            as="a"
+            href={demo.repo_url}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            Try Demo
+            Repo
           </Button>
-
-          {demo.repo_url && (
-            <Button
-              appearance="outline"
-              icon={<Code24Regular />}
-              size="small"
-              as="a"
-              href={demo.repo_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Repo
-            </Button>
-          )}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span className={styles.viewCount}>
-            <Eye24Regular style={{ fontSize: 14 }} />
-            <Text size={200}>{demo.view_count}</Text>
-          </span>
-          <Tooltip content="Copy shareable link" relationship="label">
-            <Button
-              icon={<Copy24Regular />}
-              appearance="subtle"
-              size="small"
-              onClick={handleCopyLink}
-            />
-          </Tooltip>
-        </div>
+        )}
       </CardFooter>
     </Card>
   );

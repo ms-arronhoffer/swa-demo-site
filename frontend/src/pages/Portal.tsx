@@ -7,13 +7,12 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CategoryFilter from "../components/CategoryFilter";
 import DemoCard from "../components/DemoCard";
 import NavBar from "../components/NavBar";
 import SearchBar from "../components/SearchBar";
-import type { Category, Demo } from "../types";
-import { apiFetch } from "../lib/api";
+import type { Config } from "../types";
 
 const useStyles = makeStyles({
   page: {
@@ -53,29 +52,19 @@ interface PortalProps {
 
 export default function Portal({ darkMode, onToggleDark }: PortalProps) {
   const styles = useStyles();
-  const [demos, setDemos] = useState<Demo[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [config, setConfig] = useState<Config | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      apiFetch("/api/demos").then((r) => r.json()),
-      apiFetch("/api/categories").then((r) => r.json()),
-    ]).then(([demoData, catData]) => {
-      setDemos(demoData);
-      setCategories(catData);
-      setLoading(false);
-    });
-  }, []);
-
-  const handleView = useCallback((id: string) => {
-    apiFetch(`/api/demos/${id}`).catch(() => {});
+    fetch("/config.json")
+      .then((r) => r.json())
+      .then(setConfig);
   }, []);
 
   const filtered = useMemo(() => {
-    let result = demos;
+    if (!config) return [];
+    let result = config.demos;
     if (selectedCategory !== "All") {
       result = result.filter((d) => d.category === selectedCategory);
     }
@@ -89,7 +78,7 @@ export default function Portal({ darkMode, onToggleDark }: PortalProps) {
       );
     }
     return result;
-  }, [demos, selectedCategory, search]);
+  }, [config, selectedCategory, search]);
 
   const featured = filtered.filter((d) => d.featured);
   const rest = filtered.filter((d) => !d.featured);
@@ -99,25 +88,25 @@ export default function Portal({ darkMode, onToggleDark }: PortalProps) {
       <NavBar darkMode={darkMode} onToggleDark={onToggleDark} />
 
       <div className={styles.hero}>
-        <Title1>AI Demo Gallery</Title1>
+        <Title1>{config?.title ?? "AI Demo Gallery"}</Title1>
         <Text
           size={400}
           style={{ display: "block", marginTop: 8, color: tokens.colorNeutralForeground3 }}
         >
-          Explore hands-on AI demos. Click any card to try it live.
+          {config?.subtitle ?? ""}
         </Text>
 
         <div className={styles.controls}>
           <SearchBar value={search} onChange={setSearch} />
           <CategoryFilter
-            categories={categories.map((c) => c.name)}
+            categories={(config?.categories ?? []).map((c) => c.name)}
             selected={selectedCategory}
             onChange={setSelectedCategory}
           />
         </div>
       </div>
 
-      {loading ? (
+      {!config ? (
         <div className={styles.grid}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} style={{ height: 340, borderRadius: 8 }}>
@@ -128,9 +117,7 @@ export default function Portal({ darkMode, onToggleDark }: PortalProps) {
       ) : filtered.length === 0 ? (
         <div className={styles.empty}>
           <Text size={600}>🔍</Text>
-          <Subtitle1 style={{ display: "block", marginTop: 8 }}>
-            No demos found
-          </Subtitle1>
+          <Subtitle1 style={{ display: "block", marginTop: 8 }}>No demos found</Subtitle1>
           <Text style={{ color: tokens.colorNeutralForeground3 }}>
             Try adjusting your search or category filter.
           </Text>
@@ -144,7 +131,7 @@ export default function Portal({ darkMode, onToggleDark }: PortalProps) {
           )}
           <div className={styles.grid}>
             {[...featured, ...rest].map((demo) => (
-              <DemoCard key={demo.id} demo={demo} onView={handleView} />
+              <DemoCard key={demo.id} demo={demo} />
             ))}
           </div>
         </>

@@ -1,6 +1,4 @@
 import {
-  Avatar,
-  Badge,
   Button,
   Switch,
   Text,
@@ -11,11 +9,9 @@ import {
 import {
   DarkTheme24Regular,
   WeatherSunny24Regular,
-  Settings24Regular,
   SignOut24Regular,
 } from "@fluentui/react-icons";
-import { Link } from "react-router-dom";
-import { useAuth, clearAuth } from "../hooks/useAuth";
+import { useSwaUser } from "../hooks/useSwaUser";
 
 const useStyles = makeStyles({
   nav: {
@@ -33,18 +29,11 @@ const useStyles = makeStyles({
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    textDecoration: "none",
-    color: "inherit",
   },
   right: {
     display: "flex",
     alignItems: "center",
     gap: "16px",
-  },
-  userName: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
   },
 });
 
@@ -55,14 +44,14 @@ interface NavBarProps {
 
 export default function NavBar({ darkMode, onToggleDark }: NavBarProps) {
   const styles = useStyles();
-  const { user, isAdmin } = useAuth();
+  const user = useSwaUser();
 
   return (
     <nav className={styles.nav}>
-      <Link to="/" className={styles.brand}>
+      <div className={styles.brand}>
         <span style={{ fontSize: 28 }}>🤖</span>
         <Title2>AI Demo Portal</Title2>
-      </Link>
+      </div>
 
       <div className={styles.right}>
         <Switch
@@ -71,33 +60,21 @@ export default function NavBar({ darkMode, onToggleDark }: NavBarProps) {
           label={darkMode ? <DarkTheme24Regular /> : <WeatherSunny24Regular />}
         />
 
-        {isAdmin && (
-          <Link to="/admin" style={{ textDecoration: "none" }}>
-            <Button icon={<Settings24Regular />} appearance="subtle">
-              Admin
-            </Button>
-          </Link>
-        )}
-
         {user && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div className={styles.userName}>
-              <Text weight="semibold" size={200}>
-                {user.name}
-              </Text>
-              {isAdmin && (
-                <Badge color="brand" size="small">
-                  Admin
-                </Badge>
-              )}
-            </div>
-            <Avatar name={user.name} size={32} />
-          </div>
+          <Text size={200} weight="semibold">
+            {user.userDetails}
+          </Text>
         )}
 
-        <Button icon={<SignOut24Regular />} appearance="subtle" size="small" onClick={clearAuth}>
-            Sign out
-          </Button>
+        <Button
+          icon={<SignOut24Regular />}
+          appearance="subtle"
+          size="small"
+          as="a"
+          href="/.auth/logout"
+        >
+          Sign out
+        </Button>
       </div>
     </nav>
   );

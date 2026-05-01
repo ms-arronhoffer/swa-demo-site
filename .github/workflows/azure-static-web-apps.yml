@@ -20,7 +20,7 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: Deploy Static Web App (frontend)
+      - name: Build and Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -32,13 +32,6 @@ jobs:
           output_location: "dist"
         env:
           NODE_VERSION: "20"
-
-      - name: Deploy API to linked Function App
-        uses: Azure/functions-action@v1
-        with:
-          app-name: demosite-api-eg6c7uzx6v3ua
-          package: api
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
