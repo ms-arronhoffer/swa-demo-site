@@ -12,7 +12,7 @@
   "demos": [
     {
       "id": "1",
-      "title": "Example Demo",
+      "title": "Example Demo v2",
       "description": "Replace this with your demo description. Edit config.json in the repo to add, remove, or update demos.",
       "category": "Agents",
       "demo_url": "https://example.com",
