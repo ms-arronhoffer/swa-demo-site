@@ -20,7 +20,7 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: Build And Deploy
+      - name: Deploy Static Web App (frontend only)
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -28,10 +28,29 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "frontend"
-          api_location: "api"
+          api_location: ""
           output_location: "dist"
         env:
           NODE_VERSION: "20"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Deploy API to Function App
+        run: |
+          cd api
+          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
+          zip -r ../api-deploy.zip . --exclude "*.pyc" --exclude "__pycache__/*"
+          az login --service-principal \
+            --username "${{ secrets.AZURE_CLIENT_ID }}" \
+            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
+            --tenant "${{ secrets.AZURE_TENANT_ID }}"
+          az functionapp deployment source config-zip \
+            --name demosite-api-eg6c7uzx6v3ua \
+            --resource-group rg-demosite \
+            --src ../api-deploy.zip
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

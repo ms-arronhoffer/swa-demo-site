@@ -1,12 +1,16 @@
+import json
+import os
+import uuid
+from datetime import datetime
+
 import azure.functions as func
+from pydantic import ValidationError
+
+import auth
+import cosmos_client as db
+from models import Category, Demo, DemoCreate, DemoUpdate, new_demo
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
-
-
-@app.route(route="health", methods=["GET"])
-def health(req: func.HttpRequest) -> func.HttpResponse:
-    return func.HttpResponse('{"status":"ok"}', mimetype="application/json")
-
 
 
 def json_response(data, status_code: int = 200) -> func.HttpResponse:
