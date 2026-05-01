@@ -5,13 +5,21 @@ import os
 
 import azure.functions as func
 
-_SECRET = os.environ.get("FLASK_SECRET_KEY", "dev-secret")
-_DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "")
-_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
+
+def _secret() -> str:
+    return os.environ.get("FLASK_SECRET_KEY", "dev-secret")
+
+
+def _demo_pw() -> str:
+    return os.environ.get("DEMO_PASSWORD", "")
+
+
+def _admin_pw() -> str:
+    return os.environ.get("ADMIN_PASSWORD", "")
 
 
 def make_token(password: str) -> str:
-    return hmac.new(_SECRET.encode(), password.encode(), hashlib.sha256).hexdigest()
+    return hmac.new(_secret().encode(), password.encode(), hashlib.sha256).hexdigest()
 
 
 def _get_token(req: func.HttpRequest) -> str | None:
@@ -20,19 +28,22 @@ def _get_token(req: func.HttpRequest) -> str | None:
 
 def is_authenticated(req: func.HttpRequest) -> bool:
     token = _get_token(req)
-    if not token or not _DEMO_PASSWORD:
+    demo_pw = _demo_pw()
+    if not token or not demo_pw:
         return False
-    valid = {make_token(_DEMO_PASSWORD)}
-    if _ADMIN_PASSWORD:
-        valid.add(make_token(_ADMIN_PASSWORD))
+    valid = {make_token(demo_pw)}
+    admin_pw = _admin_pw()
+    if admin_pw:
+        valid.add(make_token(admin_pw))
     return any(hmac.compare_digest(token, t) for t in valid)
 
 
 def is_admin(req: func.HttpRequest) -> bool:
     token = _get_token(req)
-    if not token or not _ADMIN_PASSWORD:
+    admin_pw = _admin_pw()
+    if not token or not admin_pw:
         return False
-    return hmac.compare_digest(token, make_token(_ADMIN_PASSWORD))
+    return hmac.compare_digest(token, make_token(admin_pw))
 
 
 def get_user_details(req: func.HttpRequest) -> dict:
