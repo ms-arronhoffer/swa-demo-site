@@ -38,19 +38,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Deploy API to Function App
+      - name: Install API dependencies (Linux x86_64)
         run: |
-          cd api
-          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
-          zip -r ../api-deploy.zip . --exclude "*.pyc" --exclude "__pycache__/*"
-          az login --service-principal \
-            --username "${{ secrets.AZURE_CLIENT_ID }}" \
-            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
-            --tenant "${{ secrets.AZURE_TENANT_ID }}"
-          az functionapp deployment source config-zip \
-            --name demosite-api-eg6c7uzx6v3ua \
-            --resource-group rg-demosite \
-            --src ../api-deploy.zip
+          pip install -r api/requirements.txt \
+            --target api/.python_packages/lib/site-packages \
+            --platform manylinux2014_x86_64 \
+            --python-version 311 \
+            --only-binary=:all:
+
+      - name: Deploy API to Function App
+        uses: Azure/functions-action@v1
+        with:
+          app-name: demosite-api-eg6c7uzx6v3ua
+          package: api
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          scm-do-build-during-deployment: false
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
