@@ -33,6 +33,7 @@ import { useEffect, useState } from "react";
 import AdminDemoForm from "../components/AdminDemoForm";
 import NavBar from "../components/NavBar";
 import type { Category, Demo, DemoCreate } from "../types";
+import { apiFetch } from "../lib/api";
 
 const useStyles = makeStyles({
   page: { minHeight: "100vh" },
@@ -72,8 +73,8 @@ export default function Admin({ darkMode, onToggleDark }: AdminProps) {
 
   const loadData = () => {
     return Promise.all([
-      fetch("/api/demos").then((r) => r.json()),
-      fetch("/api/categories").then((r) => r.json()),
+      apiFetch("/api/demos").then((r) => r.json()),
+      apiFetch("/api/categories").then((r) => r.json()),
     ]).then(([d, c]) => {
       setDemos(d);
       setCategories(c);
@@ -88,7 +89,7 @@ export default function Admin({ darkMode, onToggleDark }: AdminProps) {
   const handleSaveDemo = async (data: DemoCreate, id?: string) => {
     const url = id ? `/api/demos/${id}` : "/api/demos";
     const method = id ? "PUT" : "POST";
-    await fetch(url, {
+    await apiFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -97,13 +98,13 @@ export default function Admin({ darkMode, onToggleDark }: AdminProps) {
   };
 
   const handleDeleteDemo = async (id: string) => {
-    await fetch(`/api/demos/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/demos/${id}`, { method: "DELETE" });
     setDemos((prev) => prev.filter((d) => d.id !== id));
     setDeletingId(null);
   };
 
   const handleAddCategory = async (name: string, description?: string) => {
-    await fetch("/api/categories", {
+    await apiFetch("/api/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, description }),
@@ -112,7 +113,7 @@ export default function Admin({ darkMode, onToggleDark }: AdminProps) {
   };
 
   const handleDeleteCategory = async (id: string) => {
-    await fetch(`/api/categories/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/categories/${id}`, { method: "DELETE" });
     setCategories((prev) => prev.filter((c) => c.id !== id));
   };
 

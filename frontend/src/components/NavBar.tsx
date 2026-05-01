@@ -15,7 +15,7 @@ import {
   SignOut24Regular,
 } from "@fluentui/react-icons";
 import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth, clearAuth } from "../hooks/useAuth";
 
 const useStyles = makeStyles({
   nav: {
@@ -95,11 +95,9 @@ export default function NavBar({ darkMode, onToggleDark }: NavBarProps) {
           </div>
         )}
 
-        <a href="/.auth/logout" style={{ textDecoration: "none" }}>
-          <Button icon={<SignOut24Regular />} appearance="subtle" size="small">
+        <Button icon={<SignOut24Regular />} appearance="subtle" size="small" onClick={clearAuth}>
             Sign out
           </Button>
-        </a>
       </div>
     </nav>
   );

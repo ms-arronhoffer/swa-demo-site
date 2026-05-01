@@ -1,47 +1,59 @@
-import base64
+import hashlib
+import hmac
 import json
+import os
+
 import azure.functions as func
 
+_SECRET = os.environ.get("FLASK_SECRET_KEY", "dev-secret")
+_DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "")
+_ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
-def get_principal(req: func.HttpRequest) -> dict | None:
-    header = req.headers.get("x-ms-client-principal")
-    if not header:
-        return None
-    try:
-        decoded = base64.b64decode(header).decode("utf-8")
-        return json.loads(decoded)
-    except Exception:
-        return None
+
+def make_token(password: str) -> str:
+    return hmac.new(_SECRET.encode(), password.encode(), hashlib.sha256).hexdigest()
+
+
+def _get_token(req: func.HttpRequest) -> str | None:
+    return req.headers.get("X-Auth-Token")
+
+
+def is_authenticated(req: func.HttpRequest) -> bool:
+    token = _get_token(req)
+    if not token or not _DEMO_PASSWORD:
+        return False
+    valid = {make_token(_DEMO_PASSWORD)}
+    if _ADMIN_PASSWORD:
+        valid.add(make_token(_ADMIN_PASSWORD))
+    return any(hmac.compare_digest(token, t) for t in valid)
 
 
 def is_admin(req: func.HttpRequest) -> bool:
-    principal = get_principal(req)
-    if not principal:
+    token = _get_token(req)
+    if not token or not _ADMIN_PASSWORD:
         return False
-    roles = [r.get("val", "") for r in principal.get("userRoles", [])]
-    return "admin" in roles
-
-
-def get_user_id(req: func.HttpRequest) -> str | None:
-    principal = get_principal(req)
-    if not principal:
-        return None
-    return principal.get("userId")
+    return hmac.compare_digest(token, make_token(_ADMIN_PASSWORD))
 
 
 def get_user_details(req: func.HttpRequest) -> dict:
-    principal = get_principal(req)
-    if not principal:
-        return {"name": "Unknown", "id": None, "roles": []}
-    return {
-        "name": principal.get("userDetails", "Unknown"),
-        "id": principal.get("userId"),
-        "roles": [r.get("val", "") for r in principal.get("userRoles", [])],
-    }
+    if is_admin(req):
+        return {"name": "Admin", "id": None, "roles": ["admin", "authenticated"]}
+    if is_authenticated(req):
+        return {"name": "User", "id": None, "roles": ["authenticated"]}
+    return {"name": "Unknown", "id": None, "roles": []}
+
+
+def require_auth(req: func.HttpRequest) -> func.HttpResponse | None:
+    if not is_authenticated(req):
+        return func.HttpResponse(
+            json.dumps({"error": "Unauthorized"}),
+            status_code=401,
+            mimetype="application/json",
+        )
+    return None
 
 
 def require_admin(req: func.HttpRequest) -> func.HttpResponse | None:
-    """Returns a 403 response if the caller is not an admin, else None."""
     if not is_admin(req):
         return func.HttpResponse(
             json.dumps({"error": "Forbidden"}),

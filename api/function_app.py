@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 from datetime import datetime
 
@@ -25,21 +26,50 @@ def error_response(message: str, status_code: int) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
-# /api/me  — return current user identity + roles
+# /api/login
+# ---------------------------------------------------------------------------
+
+@app.route(route="login", methods=["POST"])
+def login(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        body = req.get_json()
+        password = body.get("password", "")
+    except ValueError:
+        return error_response("Invalid JSON", 400)
+
+    admin_pw = os.environ.get("ADMIN_PASSWORD", "")
+    demo_pw = os.environ.get("DEMO_PASSWORD", "")
+
+    if admin_pw and password == admin_pw:
+        return json_response({"token": auth.make_token(password), "isAdmin": True})
+    if demo_pw and password == demo_pw:
+        return json_response({"token": auth.make_token(password), "isAdmin": False})
+
+    return error_response("Invalid password", 401)
+
+
+# ---------------------------------------------------------------------------
+# /api/me
 # ---------------------------------------------------------------------------
 
 @app.route(route="me", methods=["GET"])
 def me(req: func.HttpRequest) -> func.HttpResponse:
-    user = auth.get_user_details(req)
-    return json_response(user)
+    unauthorized = auth.require_auth(req)
+    if unauthorized:
+        return unauthorized
+    return json_response(auth.get_user_details(req))
 
 
 # ---------------------------------------------------------------------------
-# /api/demos  — list all + create
+# /api/demos
 # ---------------------------------------------------------------------------
 
 @app.route(route="demos", methods=["GET"])
 def list_demos(req: func.HttpRequest) -> func.HttpResponse:
+    unauthorized = auth.require_auth(req)
+    if unauthorized:
+        return unauthorized
+
     category = req.params.get("category")
     featured = req.params.get("featured")
     search = req.params.get("search", "").lower()
@@ -87,12 +117,15 @@ def create_demo(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
-# /api/demos/{id}  — get one, update, delete
+# /api/demos/{id}
 # ---------------------------------------------------------------------------
 
 @app.route(route="demos/{demo_id}", methods=["GET"])
 def get_demo(req: func.HttpRequest, demo_id: str) -> func.HttpResponse:
-    # We need the category to read by partition key; cross-partition query instead
+    unauthorized = auth.require_auth(req)
+    if unauthorized:
+        return unauthorized
+
     query = "SELECT * FROM c WHERE c.id = @id"
     params = [{"name": "@id", "value": demo_id}]
     docs = db.query_items(query, params)
@@ -100,8 +133,6 @@ def get_demo(req: func.HttpRequest, demo_id: str) -> func.HttpResponse:
         return error_response("Demo not found", 404)
 
     doc = docs[0]
-
-    # Increment view count
     try:
         db.patch_item(
             doc["id"],
@@ -110,7 +141,7 @@ def get_demo(req: func.HttpRequest, demo_id: str) -> func.HttpResponse:
         )
         doc["viewCount"] = doc.get("viewCount", 0) + 1
     except Exception:
-        pass  # View count is non-critical
+        pass
 
     return json_response(Demo.from_cosmos(doc).model_dump())
 
@@ -171,11 +202,15 @@ def delete_demo(req: func.HttpRequest, demo_id: str) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
-# /api/categories  — list + create
+# /api/categories
 # ---------------------------------------------------------------------------
 
 @app.route(route="categories", methods=["GET"])
 def list_categories(req: func.HttpRequest) -> func.HttpResponse:
+    unauthorized = auth.require_auth(req)
+    if unauthorized:
+        return unauthorized
+
     query = "SELECT * FROM c WHERE c.type = 'category'"
     docs = db.query_items(query)
     categories = [Category.from_cosmos(d) for d in docs]
@@ -203,7 +238,7 @@ def create_category(req: func.HttpRequest) -> func.HttpResponse:
         icon=body.get("icon"),
     )
     doc = category.to_cosmos()
-    doc["category"] = "category"  # partition key value for category docs
+    doc["category"] = "category"
     db.upsert_item(doc)
     return json_response(category.model_dump(), 201)
 

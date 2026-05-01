@@ -13,6 +13,7 @@ import DemoCard from "../components/DemoCard";
 import NavBar from "../components/NavBar";
 import SearchBar from "../components/SearchBar";
 import type { Category, Demo } from "../types";
+import { apiFetch } from "../lib/api";
 
 const useStyles = makeStyles({
   page: {
@@ -60,8 +61,8 @@ export default function Portal({ darkMode, onToggleDark }: PortalProps) {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/demos").then((r) => r.json()),
-      fetch("/api/categories").then((r) => r.json()),
+      apiFetch("/api/demos").then((r) => r.json()),
+      apiFetch("/api/categories").then((r) => r.json()),
     ]).then(([demoData, catData]) => {
       setDemos(demoData);
       setCategories(catData);
@@ -70,7 +71,7 @@ export default function Portal({ darkMode, onToggleDark }: PortalProps) {
   }, []);
 
   const handleView = useCallback((id: string) => {
-    fetch(`/api/demos/${id}`).catch(() => {});
+    apiFetch(`/api/demos/${id}`).catch(() => {});
   }, []);
 
   const filtered = useMemo(() => {
