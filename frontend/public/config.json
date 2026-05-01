@@ -1,6 +1,7 @@
 {
   "title": "AI Demo Gallery",
   "subtitle": "Explore hands-on AI demos. Click any card to try it live.",
+  "passwordHash": "ce233f7339f3c16a248ec8db57c6284bea805943c4ce40eddd4c34467439e627",
   "categories": [
     { "name": "Agents", "icon": "🤖" },
     { "name": "Language Models", "icon": "💬" },

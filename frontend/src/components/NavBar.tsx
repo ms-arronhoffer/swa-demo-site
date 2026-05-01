@@ -1,8 +1,6 @@
 import {
-  Avatar,
   Button,
   Switch,
-  Text,
   Title2,
   makeStyles,
   tokens,
@@ -12,7 +10,7 @@ import {
   WeatherSunny24Regular,
   SignOut24Regular,
 } from "@fluentui/react-icons";
-import { useSwaUser } from "../hooks/useSwaUser";
+import { clearAuth } from "../lib/auth";
 
 const useStyles = makeStyles({
   nav: {
@@ -36,26 +34,22 @@ const useStyles = makeStyles({
     alignItems: "center",
     gap: "16px",
   },
-  userInfo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  userText: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-  },
 });
 
 interface NavBarProps {
   darkMode: boolean;
   onToggleDark: () => void;
+  onSignOut?: () => void;
 }
 
-export default function NavBar({ darkMode, onToggleDark }: NavBarProps) {
+export default function NavBar({ darkMode, onToggleDark, onSignOut }: NavBarProps) {
   const styles = useStyles();
-  const user = useSwaUser();
+
+  const handleSignOut = () => {
+    clearAuth();
+    onSignOut?.();
+    window.location.reload();
+  };
 
   return (
     <nav className={styles.nav}>
@@ -71,26 +65,11 @@ export default function NavBar({ darkMode, onToggleDark }: NavBarProps) {
           label={darkMode ? <DarkTheme24Regular /> : <WeatherSunny24Regular />}
         />
 
-        {user && (
-          <div className={styles.userInfo}>
-            <div className={styles.userText}>
-              <Text weight="semibold" size={300}>
-                {user.displayName}
-              </Text>
-              <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-                {user.email}
-              </Text>
-            </div>
-            <Avatar name={user.displayName} size={32} />
-          </div>
-        )}
-
         <Button
           icon={<SignOut24Regular />}
           appearance="subtle"
           size="small"
-          as="a"
-          href="/.auth/logout"
+          onClick={handleSignOut}
         >
           Sign out
         </Button>

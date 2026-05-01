@@ -19,6 +19,7 @@ export interface Category {
 export interface Config {
   title: string;
   subtitle: string;
+  passwordHash: string;
   categories: Category[];
   demos: Demo[];
 }

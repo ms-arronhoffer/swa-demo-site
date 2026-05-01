@@ -1,13 +1,11 @@
 import {
-  Skeleton,
-  SkeletonItem,
   Subtitle1,
   Text,
   Title1,
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import CategoryFilter from "../components/CategoryFilter";
 import DemoCard from "../components/DemoCard";
 import NavBar from "../components/NavBar";
@@ -46,24 +44,17 @@ const useStyles = makeStyles({
 });
 
 interface PortalProps {
+  config: Config;
   darkMode: boolean;
   onToggleDark: () => void;
 }
 
-export default function Portal({ darkMode, onToggleDark }: PortalProps) {
+export default function Portal({ config, darkMode, onToggleDark }: PortalProps) {
   const styles = useStyles();
-  const [config, setConfig] = useState<Config | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetch("/config.json")
-      .then((r) => r.json())
-      .then(setConfig);
-  }, []);
-
   const filtered = useMemo(() => {
-    if (!config) return [];
     let result = config.demos;
     if (selectedCategory !== "All") {
       result = result.filter((d) => d.category === selectedCategory);
@@ -88,33 +79,25 @@ export default function Portal({ darkMode, onToggleDark }: PortalProps) {
       <NavBar darkMode={darkMode} onToggleDark={onToggleDark} />
 
       <div className={styles.hero}>
-        <Title1>{config?.title ?? "AI Demo Gallery"}</Title1>
+        <Title1>{config.title}</Title1>
         <Text
           size={400}
           style={{ display: "block", marginTop: 8, color: tokens.colorNeutralForeground3 }}
         >
-          {config?.subtitle ?? ""}
+          {config.subtitle}
         </Text>
 
         <div className={styles.controls}>
           <SearchBar value={search} onChange={setSearch} />
           <CategoryFilter
-            categories={(config?.categories ?? []).map((c) => c.name)}
+            categories={config.categories.map((c) => c.name)}
             selected={selectedCategory}
             onChange={setSelectedCategory}
           />
         </div>
       </div>
 
-      {!config ? (
-        <div className={styles.grid}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} style={{ height: 340, borderRadius: 8 }}>
-              <SkeletonItem style={{ height: "100%" }} />
-            </Skeleton>
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className={styles.empty}>
           <Text size={600}>🔍</Text>
           <Subtitle1 style={{ display: "block", marginTop: 8 }}>No demos found</Subtitle1>
