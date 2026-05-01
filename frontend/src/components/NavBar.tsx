@@ -1,4 +1,5 @@
 import {
+  Avatar,
   Button,
   Switch,
   Text,
@@ -35,6 +36,16 @@ const useStyles = makeStyles({
     alignItems: "center",
     gap: "16px",
   },
+  userInfo: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  userText: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+  },
 });
 
 interface NavBarProps {
@@ -61,9 +72,17 @@ export default function NavBar({ darkMode, onToggleDark }: NavBarProps) {
         />
 
         {user && (
-          <Text size={200} weight="semibold">
-            {user.userDetails}
-          </Text>
+          <div className={styles.userInfo}>
+            <div className={styles.userText}>
+              <Text weight="semibold" size={300}>
+                {user.displayName}
+              </Text>
+              <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+                {user.email}
+              </Text>
+            </div>
+            <Avatar name={user.displayName} size={32} />
+          </div>
         )}
 
         <Button
