@@ -1,18 +1,11 @@
-import json
-import os
-import uuid
-from datetime import datetime
-
 import azure.functions as func
-
-import auth
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 
 @app.route(route="health", methods=["GET"])
 def health(req: func.HttpRequest) -> func.HttpResponse:
-    return func.HttpResponse(json.dumps({"status": "ok"}), mimetype="application/json")
+    return func.HttpResponse('{"status":"ok"}', mimetype="application/json")
 
 
 
